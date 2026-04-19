@@ -1,0 +1,78 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: covid_postgres
+    environment:
+      POSTGRES_USER: azad
+      POSTGRES_PASSWORD: azad
+      POSTGRES_DB: azad
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
+      - ./data:/opt/airflow/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "azad"]
+      interval: 5s
+      retries: 5
+
+  airflow-init:
+    image: apache/airflow:2.9.0
+    entrypoint: /bin/bash
+    command: -c "airflow db migrate && airflow users create --username admin --password admin --firstname admin --lastname admin --role Admin --email admin@example.com"
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://azad:azad@postgres:5432/azad
+      AIRFLOW__CORE__FERNET_KEY: tl80e8ng8ROBp4-4n0z-QeM1Px4SMatFi-dNeZxpnzk=
+      AIRFLOW__CORE__DAGS_FOLDER: /opt/airflow/dags
+    volumes:
+      - ./dags:/opt/airflow/dags
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  airflow-webserver:
+    image: apache/airflow:2.9.0
+    container_name: airflow_webserver
+    restart: always
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://azad:azad@postgres:5432/azad
+      AIRFLOW__CORE__FERNET_KEY: tl80e8ng8ROBp4-4n0z-QeM1Px4SMatFi-dNeZxpnzk=
+      AIRFLOW__CORE__DAGS_FOLDER: /opt/airflow/dags
+      _PIP_ADDITIONAL_REQUIREMENTS: psycopg2-binary
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./scripts:/opt/airflow/scripts
+      - ./data:/opt/airflow/data
+    ports:
+      - "8081:8080"
+    command: bash -c "rm -f /opt/airflow/airflow-webserver.pid && airflow webserver"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  airflow-scheduler:
+    image: apache/airflow:2.9.0
+    container_name: airflow_scheduler
+    restart: always
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://azad:azad@postgres:5432/azad
+      AIRFLOW__CORE__FERNET_KEY: tl80e8ng8ROBp4-4n0z-QeM1Px4SMatFi-dNeZxpnzk=
+      AIRFLOW__CORE__DAGS_FOLDER: /opt/airflow/dags
+      _PIP_ADDITIONAL_REQUIREMENTS: psycopg2-binary
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./scripts:/opt/airflow/scripts
+      - ./data:/opt/airflow/data
+    command: airflow scheduler
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+networks:
+  default:
+    driver: bridge
