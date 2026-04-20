@@ -50,3 +50,18 @@ streamlit run app.py
 * dags/ → pipeline
 * data/ → data lake (CSV)
 * dashboard/ → UI
+
+## 📷 Screenshots
+
+### Airflow DAGs
+![DAG 1](dashboard/screenshots/dag1.png)
+![DAG 2](dashboard/screenshots/dag2.png)
+![DAG 3](dashboard/screenshots/dag3.png)
+![Dashboard DAG](dashboard/screenshots/dahsboard_dag.png)
+
+### Dashboard Views
+![Cases by Country](dashboard/screenshots/cases_by_country.png)
+![Cases Over Time](dashboard/screenshots/cases_over_time.png)
+
+### Processed Data
+![Processed Data](dashboard/screenshots/processed_data.png)
