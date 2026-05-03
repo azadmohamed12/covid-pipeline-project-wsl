@@ -16,7 +16,8 @@ without proper tooling. Analysts need a reliable, automated pipeline that:
 
 This project solves that problem by building an end-to-end automated data
 pipeline that ingests daily COVID-19 case and death data, loads it into
-PostgreSQL, and visualizes key metrics through a Streamlit dashboard.
+PostgreSQL on Supabase cloud, transforms it using dbt, and visualizes
+key metrics through a Streamlit dashboard.
 
 ### ❓ Questions This Project Answers
 - Which countries had the highest total COVID-19 cases?
@@ -30,16 +31,19 @@ PostgreSQL, and visualizes key metrics through a Streamlit dashboard.
 | Tool | Purpose |
 |------|---------|
 | Apache Airflow | Workflow orchestration & scheduling |
-| PostgreSQL | Data warehouse |
+| PostgreSQL (Supabase) | Cloud data warehouse |
+| dbt | Data transformations & testing |
 | Docker & Docker Compose | Containerization |
 | Streamlit | Interactive dashboard |
 | Python | Data processing |
 
 ## 🔄 Pipeline
 
-1. Load CSV into Postgres
-2. Transform data (death rate)
-3. Store in `covid_summary`
+1. Load CSV into Supabase PostgreSQL (cloud)
+2. Transform data using dbt (staging → mart)
+3. Calculate death rate per country
+4. Store in partitioned `covid_summary` table
+5. Visualize in Streamlit dashboard
 
 ## 📊 Dashboard Features
 
@@ -55,6 +59,7 @@ Before running this project make sure you have:
 - Docker Desktop installed (version 20.10 or higher)
 - Python 3.8+
 - Git
+- dbt-postgres installed
 - Ports **8081** (Airflow) and **5432** (Postgres) must be free
 
 ## ▶️ How to Run
@@ -76,18 +81,18 @@ docker compose up
 ```
 Wait about 30 seconds for all services to start.
 
-### 4. Setup Airflow Postgres Connection (Required!)
+### 4. Setup Airflow Supabase Connection (Required!)
 This step is required before triggering the DAG:
 - Open http://localhost:8081 in your browser
 - Login: username **admin** / password **admin**
 - Go to **Admin → Connections → + Add a new record**
 - Fill in:
-  - **Connection Id:** postgres_default
+  - **Connection Id:** supabase_postgres
   - **Connection Type:** Postgres
-  - **Host:** postgres
-  - **Database:** azad
-  - **Login:** azad
-  - **Password:** azad
+  - **Host:** aws-1-eu-central-1.pooler.supabase.com
+  - **Database:** postgres
+  - **Login:** postgres.cfhlplwncfryzbtunngo
+  - **Password:** your Supabase password
   - **Port:** 5432
 - Click **Save**
 
@@ -97,12 +102,19 @@ airflow dags trigger load_data_clean
 ```
 Or trigger manually from the Airflow UI at http://localhost:8081
 
-### 6. Install dashboard dependencies
+### 6. Run dbt transformations
+```bash
+cd covid_dbt
+dbt run
+dbt test
+```
+
+### 7. Install dashboard dependencies
 ```bash
 pip install -r requirements.txt
 ```
 
-### 7. Run the dashboard
+### 8. Run the dashboard
 ```bash
 cd dashboard
 streamlit run app.py
@@ -110,6 +122,63 @@ streamlit run app.py
 Open http://localhost:8501 in your browser.
 
 ## 📁 Project Structure
+## 🔄 Transformations (dbt)
+
+This project uses **dbt (Data Build Tool)** to transform raw COVID-19
+data into clean, tested, and documented analytical models.
+
+### 🏗️ Model Structure
+**Staging** (`models/staging/stg_covid.sql`)
+Cleans raw COVID data by filtering null values and selecting
+relevant columns.
+
+**Mart** (`models/marts/fct_covid_summary.sql`)
+Final analytical model that adds death rate calculation on top
+of the staging model.
+
+### ✅ Data Quality Tests
+
+| Test | Model | Result |
+|------|-------|--------|
+| not_null | stg_covid.location | ✅ PASS |
+| not_null | stg_covid.date | ✅ PASS |
+| not_null | fct_covid_summary.location | ✅ PASS |
+| not_null | fct_covid_summary.death_rate | ✅ PASS |
+
+## 🗄️ Data Warehouse Design
+
+The `covid_summary` table is **partitioned by location (country)** because:
+
+1. The dashboard filters data by country (SELECT dropdown)
+2. The bar chart aggregates data by country
+3. Partitioning means Postgres only scans the relevant country
+   partition instead of the entire table — making queries faster
+
+Each country has its own partition:
+- `covid_summary_usa` → USA data
+- `covid_summary_italy` → Italy data
+- `covid_summary_germany` → Germany data
+- `covid_summary_india` → India data
+- `covid_summary_default` → any other country
+
+## ☁️ Cloud Infrastructure (Supabase)
+
+This project uses **Supabase** as a fully managed cloud PostgreSQL
+database. The entire pipeline runs against the cloud database —
+no local database required.
+
+### Supabase Tables (Partitioned)
+![Supabase Tables](dashboard/screenshots/supabase1.png)
+
+### Partition Architecture
+![Supabase Partitions](dashboard/screenshots/supabase2.png)
+
+### Live Cloud Data
+![Supabase Data](dashboard/screenshots/supabase3.png)
+
+### Query Results
+![Supabase Query](dashboard/screenshots/supabase4.png)
+
 ## 📷 Screenshots
 
 ### Airflow DAGs
@@ -124,55 +193,3 @@ Open http://localhost:8501 in your browser.
 
 ### Processed Data
 ![Processed Data](dashboard/screenshots/processed_data.png)
-## 🗄️ Data Warehouse Design
-
-The `covid_summary` table is **partitioned by location (country)** because:
-
-1. The dashboard filters data by country (SELECT dropdown)
-2. The bar chart aggregates data by country
-3. Partitioning means Postgres only scans the relevant country partition instead of the entire table — making queries faster
-
-Each country has its own partition:
-- `covid_summary_usa` → USA data
-- `covid_summary_italy` → Italy data
-- `covid_summary_germany` → Germany data
-- `covid_summary_india` → India data
-- `covid_summary_default` → any other country
-
-## ☁️ Enterprise-Grade Cloud Infrastructure (Supabase)
-
-This project has been architected with a **fully managed, production-grade 
-cloud PostgreSQL database** powered by Supabase — a world-class cloud 
-infrastructure platform. The entire data pipeline operates seamlessly 
-in the cloud, processing and storing mission-critical COVID-19 analytical 
-data with enterprise-level reliability and performance.
-
-### 🏗️ Intelligent Partitioned Tables in the Cloud
-The `covid_summary` table has been meticulously engineered with 
-**LIST partitioning by country (location)**, delivering blazing-fast 
-query performance and optimal data organization at scale. This 
-sophisticated partitioning strategy ensures the database engine 
-performs surgical precision scans on only the relevant country 
-partition — rather than exhaustively scanning the entire dataset.
-
-![Supabase Tables](dashboard/screenshots/supabase1.png)
-
-### 📊 World-Class Partition Architecture
-Each country has been allocated its own dedicated high-performance 
-partition, enabling unprecedented query optimization and data isolation.
-
-![Supabase Partitions](dashboard/screenshots/supabase2.png)
-
-### 🌍 Real-Time Cloud Data Processing
-Mission-critical COVID-19 data flows seamlessly through the 
-automated pipeline and is stored with military-grade security 
-in the cloud — accessible from any corner of the globe, 24/7.
-
-![Supabase Data](dashboard/screenshots/supabase3.png)
-
-### ✅ Empirical Proof of Partitioning Excellence
-The query results below provide irrefutable empirical evidence 
-that the sophisticated partitioning strategy is operating 
-with flawless precision and maximum efficiency.
-
-![Supabase Query](dashboard/screenshots/supabase4.png)

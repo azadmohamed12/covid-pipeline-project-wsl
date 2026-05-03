@@ -20,3 +20,4 @@ airflow/tmp/
 
 # OS junk files
 *.DS_Store
+logs/
