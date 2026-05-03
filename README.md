@@ -26,6 +26,8 @@ key metrics through a Streamlit dashboard.
 - How do different countries compare in case volume?
 
 ## 🏗️ Architecture
+
+CSV Data → Airflow DAG → Supabase PostgreSQL (Cloud) → dbt → Streamlit Dashboard
 ## ⚙️ Tech Stack
 
 | Tool | Purpose |
@@ -122,6 +124,15 @@ streamlit run app.py
 Open http://localhost:8501 in your browser.
 
 ## 📁 Project Structure
+
+- dags/ → Airflow DAG
+- data/ → Raw CSV files
+- dashboard/ → Streamlit app
+- covid_dbt/ → dbt models
+- sql/ → SQL queries
+- docker-compose.yml → All services
+- requirements.txt → Python packages
+- .env.example → Environment template
 ## 🔄 Transformations (dbt)
 
 This project uses **dbt (Data Build Tool)** to transform raw COVID-19
