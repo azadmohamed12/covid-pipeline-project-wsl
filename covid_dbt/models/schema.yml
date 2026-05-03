@@ -1,0 +1,29 @@
+version: 2
+
+sources:
+  - name: public
+    database: postgres
+    schema: public
+    tables:
+      - name: covid_table
+
+models:
+  - name: stg_covid
+    description: "Staging model that cleans raw COVID data"
+    columns:
+      - name: location
+        tests:
+          - not_null
+      - name: date
+        tests:
+          - not_null
+
+  - name: fct_covid_summary
+    description: "Final model with death rate calculation"
+    columns:
+      - name: location
+        tests:
+          - not_null
+      - name: death_rate
+        tests:
+          - not_null
