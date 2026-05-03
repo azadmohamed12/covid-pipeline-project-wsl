@@ -18,7 +18,7 @@ def load_csv_to_postgres():
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"{file_path} not found")
 
-    hook = PostgresHook(postgres_conn_id="postgres_default")
+    hook = PostgresHook(postgres_conn_id="supabase_postgres")
     conn = hook.get_conn()
     cur = conn.cursor()
 
@@ -82,7 +82,7 @@ with DAG(
     # TRANSFORM TASK
     transform_task = PostgresOperator(
         task_id="transform_in_postgres",
-        postgres_conn_id="postgres_default",
+        postgres_conn_id="supabase_postgres",
         sql="""
             DROP TABLE IF EXISTS covid_summary;
 
