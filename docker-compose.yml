@@ -26,6 +26,7 @@ services:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://azad:azad@postgres:5432/azad
       AIRFLOW__CORE__FERNET_KEY: tl80e8ng8ROBp4-4n0z-QeM1Px4SMatFi-dNeZxpnzk=
+      AIRFLOW__WEBSERVER__SECRET_KEY: mysupersecretkey123
       AIRFLOW__CORE__DAGS_FOLDER: /opt/airflow/dags
     volumes:
       - ./dags:/opt/airflow/dags
@@ -41,6 +42,7 @@ services:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://azad:azad@postgres:5432/azad
       AIRFLOW__CORE__FERNET_KEY: tl80e8ng8ROBp4-4n0z-QeM1Px4SMatFi-dNeZxpnzk=
+      AIRFLOW__WEBSERVER__SECRET_KEY: mysupersecretkey123
       AIRFLOW__CORE__DAGS_FOLDER: /opt/airflow/dags
       _PIP_ADDITIONAL_REQUIREMENTS: psycopg2-binary
     volumes:
@@ -62,6 +64,7 @@ services:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://azad:azad@postgres:5432/azad
       AIRFLOW__CORE__FERNET_KEY: tl80e8ng8ROBp4-4n0z-QeM1Px4SMatFi-dNeZxpnzk=
+      AIRFLOW__WEBSERVER__SECRET_KEY: mysupersecretkey123
       AIRFLOW__CORE__DAGS_FOLDER: /opt/airflow/dags
       _PIP_ADDITIONAL_REQUIREMENTS: psycopg2-binary
     volumes:
