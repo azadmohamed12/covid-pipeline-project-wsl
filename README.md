@@ -124,3 +124,17 @@ Open http://localhost:8501 in your browser.
 
 ### Processed Data
 ![Processed Data](dashboard/screenshots/processed_data.png)
+## 🗄️ Data Warehouse Design
+
+The `covid_summary` table is **partitioned by location (country)** because:
+
+1. The dashboard filters data by country (SELECT dropdown)
+2. The bar chart aggregates data by country
+3. Partitioning means Postgres only scans the relevant country partition instead of the entire table — making queries faster
+
+Each country has its own partition:
+- `covid_summary_usa` → USA data
+- `covid_summary_italy` → Italy data
+- `covid_summary_germany` → Germany data
+- `covid_summary_india` → India data
+- `covid_summary_default` → any other country
